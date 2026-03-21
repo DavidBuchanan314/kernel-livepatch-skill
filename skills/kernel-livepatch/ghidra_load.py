@@ -25,6 +25,8 @@ def main() -> None:
                         help='Run Ghidra auto-analysis after import (very slow!!!)')
     args = parser.parse_args()
 
+    Path(args.project_dir).mkdir(parents=True, exist_ok=True)
+
     manifest_path = Path(args.manifest).resolve()
     with open(manifest_path) as f:
         manifest = json.load(f)
