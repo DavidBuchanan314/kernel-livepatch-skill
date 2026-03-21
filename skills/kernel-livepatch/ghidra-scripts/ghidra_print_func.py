@@ -3,7 +3,7 @@
 # decompilation (with instruction addresses) of a named function.
 #
 # Usage (headless):
-#   -postScript ghidra_print_func.py <function_name>
+#   -postScript ghidra_print_func.py <function_name> [output_file]
 #
 # Runs inside Ghidra's Jython 2.7 interpreter - keep compatible.
 #
@@ -16,18 +16,24 @@ from ghidra.program.model.symbol import SourceType
 
 args = getScriptArgs()
 if not args:
-    print('Usage: ghidra_print_func.py <function_name>')
-    raise SystemExit(1)
+    raise SystemExit('Usage: ghidra_print_func.py <function_name> [output_file]')
 
 func_name = args[0]
+out = open(args[1], 'w') if len(args) > 1 else None
+
+def emit(s=''):
+    if out:
+        out.write(s + '\n')
+    else:
+        print(s)
 
 # Look up function by name.
 funcs = list(getGlobalFunctions(func_name))
 if not funcs:
-    print('ERROR: function %r not found.' % func_name)
+    emit('ERROR: function %r not found.' % func_name)
     raise SystemExit(1)
 if len(funcs) > 1:
-    print('WARNING: %d functions named %r; using first.' % (len(funcs), func_name))
+    emit('WARNING: %d functions named %r; using first.' % (len(funcs), func_name))
 
 func = funcs[0]
 listing = currentProgram.getListing()
@@ -64,12 +70,12 @@ def _print_decomp_annotated(markup, c_code):
     for i, line in enumerate(c_code.split('\n')):
         addr = line_map.get(i + 1)
         if addr is not None:
-            print('%-80s  /* %s */' % (line, addr))
+            emit('%-80s  /* %s */' % (line, addr))
         else:
-            print(line)
+            emit(line)
 
-print('')
-print('=== DECOMPILATION: %s ===' % func.getName())
+emit('')
+emit('=== DECOMPILATION: %s ===' % func.getName())
 decompiler = DecompInterface()
 try:
     decompiler.openProgram(currentProgram)
@@ -77,24 +83,22 @@ try:
     if result.decompileCompleted():
         _print_decomp_annotated(result.getCCodeMarkup(), result.getDecompiledFunction().getC())
     else:
-        print('ERROR: decompilation failed: %s' % result.getErrorMessage())
+        emit('ERROR: decompilation failed: %s' % result.getErrorMessage())
 finally:
     decompiler.dispose()
 
 # ---------------------------------------------------------------------------
 # Disassembly
 # ---------------------------------------------------------------------------
-if listing.getInstructionAt(func.getEntryPoint()) is None:
-    print('Disassembling %s...' % func_name)
-    runCommand(DisassembleCommand(func.getBody(), None, True))
-    runCommand(CreateFunctionCmd(func.getName(), func.getEntryPoint(), None, SourceType.IMPORTED, True, True))
-    func = getGlobalFunctions(func_name)[0]
+runCommand(DisassembleCommand(func.getBody(), None, True))
+runCommand(CreateFunctionCmd(func.getName(), func.getEntryPoint(), None, SourceType.IMPORTED, True, True))
+func = getGlobalFunctions(func_name)[0]
 
 ref_mgr      = currentProgram.getReferenceManager()
 symbol_table = currentProgram.getSymbolTable()
 
-print('')
-print('=== DISASSEMBLY: %s @ %s ===' % (func.getName(), func.getEntryPoint()))
+emit('')
+emit('=== DISASSEMBLY: %s @ %s ===' % (func.getName(), func.getEntryPoint()))
 for cu in listing.getCodeUnits(func.getBody(), True):
     raw = ''.join('%02x' % (b & 0xff) for b in cu.getBytes())
     syms = []
@@ -103,4 +107,7 @@ for cu in listing.getCodeUnits(func.getBody(), True):
         if sym is not None:
             syms.append(sym.getName())
     suffix = ('  ; ' + ', '.join(syms)) if syms else ''
-    print('%s  %-8s  %s%s' % (cu.getAddress(), raw, cu, suffix))
+    emit('%s  %-8s  %s%s' % (cu.getAddress(), raw, cu, suffix))
+
+if out:
+    out.close()

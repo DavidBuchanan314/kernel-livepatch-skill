@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / 'lib'))
@@ -23,12 +24,22 @@ def main() -> None:
 
     script = Path(__file__).parent.resolve() / 'ghidra-scripts' / 'ghidra_print_func.py'
 
-    ghidra_run(args.project_dir, args.project_name, [
-        '-noanalysis',
-        '-process',
-        '-postScript', script.name, args.function,
-        '-scriptPath', str(script.parent),
-    ], args.ghidra)
+    # flatpak ghidra doesn't like writing to /tmp/
+    with tempfile.NamedTemporaryFile(dir=Path.home(), suffix='.txt', delete=False) as f:
+        outfile = f.name
+
+    try:
+        ghidra_run(args.project_dir, args.project_name, [
+            '-noanalysis',
+            '-process',
+            '-postScript', script.name, args.function, outfile,
+            '-scriptPath', str(script.parent),
+        ], args.ghidra, quiet=True)
+    finally:
+        out = Path(outfile)
+        if out.exists():
+            print(out.read_text(), end='')
+            out.unlink()
 
 
 if __name__ == '__main__':
