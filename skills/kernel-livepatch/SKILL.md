@@ -15,3 +15,7 @@ Workflow:
 	- NOTE: not all symbols are available! Grep the generated vmlinux.h to see what is. Anything defined as a macro is not present, you'll need to work around this. Some symbols may be available in `./kdump/kallsyms` but not in vmlinux.h, if they're missing BTF info.
 	- Ideally, you should have the module revert any patches when unloaded.
 6. Compile the module and instruct the user to insmod it.
+
+Additional useful tools:
+
+- Use `read_kdump.py` to read subsections of an existing kernel dump.
