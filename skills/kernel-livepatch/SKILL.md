@@ -10,7 +10,7 @@ Workflow:
 4. Reconstruct kernel headers using `gen_vmlinux_h.py`
 5. Devise a kernel patch strategy, and write a kernel module to perform the patching. (see ./example-module/ for an example).
 	- It's ok to hardcode addresses.
-	- You can do simple instruction patches with text_peek()
+	- You can do simple instruction patches with text_poke()
 	- For nontrivial hooks, use register_kprobe()
 	- NOTE: not all symbols are available! Grep the generated vmlinux.h to see what is. Anything defined as a macro is not present, you'll need to work around this. Some symbols may be available in `./kdump/kallsyms` but not in vmlinux.h, if they're missing BTF info.
 	- Ideally, you should have the module revert any patches when unloaded.
@@ -18,5 +18,5 @@ Workflow:
 
 Additional useful tools:
 
-- Use `read_kdump.py` to read subsections of an existing kernel dump.
+- Use `read_kdump.py` to read subsections of an existing kernel dump, as raw data.
 - When `--disasm LENGTH` is passed to `ghidra_print_func.py`, the first positional arg is treated as an address. The Ghidra script skips decompilation and just disassembles the raw address range.
