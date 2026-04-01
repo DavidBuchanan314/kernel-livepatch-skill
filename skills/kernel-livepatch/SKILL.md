@@ -19,3 +19,4 @@ Workflow:
 Additional useful tools:
 
 - Use `read_kdump.py` to read subsections of an existing kernel dump.
+- When `--disasm LENGTH` is passed to `ghidra_print_func.py`, the first positional arg is treated as an address. The Ghidra script skips decompilation and just disassembles the raw address range.
