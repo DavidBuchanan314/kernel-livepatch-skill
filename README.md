@@ -1,2 +1,2 @@
 # kernel-livepatch-skill
-An agent skill to enable runtime linux kernel patching
+agent skill to facilitate runtime linux kernel patching
